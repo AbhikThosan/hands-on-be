@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const authRoutes = require("./routes/authRoutes");
 const pool = require("./db");
+const eventRoutes = require("./routes/eventRoutes");
 
 const app = express();
 
@@ -18,6 +19,7 @@ if (process.env.NODE_ENV !== "production") {
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api", eventRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running..." });
