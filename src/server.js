@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const communityHelpRoutes = require("./routes/communityHelpRoutes");
+const teamRoutes = require("./routes/teamRoutes");
 const pool = require("./db");
 
 const app = express();
@@ -22,6 +23,7 @@ if (process.env.NODE_ENV !== "production") {
 app.use("/api/auth", authRoutes);
 app.use("/api", eventRoutes);
 app.use("/api", communityHelpRoutes);
+app.use("/api", teamRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running..." });
