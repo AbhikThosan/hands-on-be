@@ -1,112 +1,285 @@
-const express = require("express");
-const { body, query } = require("express-validator");
-const authMiddleware = require("../middleware/authMiddleware");
-const {
+const pool = require("../db");
+const { validationResult } = require("express-validator");
+
+// Create a new help request
+const createHelpRequest = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { title, description, location, category, urgency_level } = req.body;
+
+  try {
+    const newRequest = await pool.query(
+      `INSERT INTO community_help_requests 
+        (title, description, location, category, urgency_level, created_by, created_by_role) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING *`,
+      [
+        title,
+        description,
+        location,
+        category,
+        urgency_level,
+        req.user.id,
+        req.user.role,
+      ]
+    );
+
+    res.status(201).json({
+      message: "Help request created successfully",
+      help_request: newRequest.rows[0],
+    });
+  } catch (error) {
+    console.error("Error creating help request:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get all help requests with filters and pagination
+const getHelpRequests = async (req, res) => {
+  const {
+    category,
+    location,
+    urgency_level,
+    status,
+    page = 1,
+    limit = 10,
+    all = false,
+  } = req.query;
+
+  // Build the base query
+  let queryString = `
+    WITH comments_agg AS (
+      SELECT 
+        help_request_id,
+        json_agg(
+          json_build_object(
+            'id', id,
+            'comment_text', comment_text,
+            'created_by', created_by,
+            'created_by_role', created_by_role,
+            'is_helper', is_helper,
+            'created_at', created_at,
+            'commenter_name', (SELECT name FROM users WHERE id = created_by)
+          ) ORDER BY created_at DESC
+        ) as comments
+      FROM community_help_comments
+      GROUP BY help_request_id
+    ),
+    filtered_requests AS (
+      SELECT 
+        hr.*,
+        u.name as creator_name,
+        COALESCE(c.comments, '[]'::json) as comments
+      FROM community_help_requests hr
+      JOIN users u ON hr.created_by = u.id
+      LEFT JOIN comments_agg c ON c.help_request_id = hr.id
+      WHERE 1=1
+  `;
+
+  const queryParams = [];
+  let paramCount = 0;
+
+  // Add filters if provided
+  if (category) {
+    paramCount++;
+    queryParams.push(category);
+    queryString += ` AND hr.category = $${paramCount}`;
+  }
+
+  if (location) {
+    paramCount++;
+    queryParams.push(`%${location}%`);
+    queryString += ` AND hr.location ILIKE $${paramCount}`;
+  }
+
+  if (urgency_level) {
+    paramCount++;
+    queryParams.push(urgency_level);
+    queryString += ` AND hr.urgency_level = $${paramCount}`;
+  }
+
+  if (status) {
+    paramCount++;
+    queryParams.push(status);
+    queryString += ` AND hr.status = $${paramCount}`;
+  }
+
+  queryString += ` ORDER BY 
+    CASE 
+      WHEN hr.urgency_level = 'urgent' THEN 1
+      WHEN hr.urgency_level = 'medium' THEN 2
+      WHEN hr.urgency_level = 'low' THEN 3
+    END,
+    hr.created_at DESC
+  )`;
+
+  try {
+    if (all === "true") {
+      // If all=true, return all requests without pagination
+      queryString += `
+        SELECT 
+          (SELECT COUNT(*) FROM filtered_requests) as total_count,
+          1 as total_pages,
+          (SELECT COUNT(*) FROM filtered_requests) as items_per_page,
+          0 as offset,
+          1 as current_page,
+          (
+            SELECT json_agg(fr.*)
+            FROM filtered_requests fr
+          ) as help_requests
+      `;
+    } else {
+      // Add pagination
+      const offset = (page - 1) * limit;
+      queryParams.push(limit, offset);
+
+      queryString += `
+        SELECT 
+          (SELECT COUNT(*) FROM filtered_requests) as total_count,
+          CEIL((SELECT COUNT(*) FROM filtered_requests)::float / $${
+            paramCount + 1
+          }) as total_pages,
+          $${paramCount + 1}::integer as items_per_page,
+          $${paramCount + 2}::integer as offset,
+          ${page}::integer as current_page,
+          (
+            SELECT json_agg(fr.*)
+            FROM (
+              SELECT *
+              FROM filtered_requests
+              LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+            ) fr
+          ) as help_requests
+      `;
+    }
+
+    const result = await pool.query(queryString, queryParams);
+    const response = {
+      pagination: {
+        total_items: Number(result.rows[0].total_count),
+        total_pages: Number(result.rows[0].total_pages),
+        current_page: Number(result.rows[0].current_page),
+        items_per_page: Number(result.rows[0].items_per_page),
+        has_next:
+          Number(result.rows[0].current_page) <
+          Number(result.rows[0].total_pages),
+        has_previous: Number(result.rows[0].current_page) > 1,
+      },
+      help_requests: result.rows[0].help_requests || [],
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Error fetching help requests:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Add a comment to a help request
+const addComment = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { help_request_id } = req.params;
+  const { comment_text, is_helper = false } = req.body;
+
+  try {
+    // Start a transaction
+    await pool.query("BEGIN");
+
+    // Add the comment
+    const newComment = await pool.query(
+      `INSERT INTO community_help_comments 
+        (help_request_id, comment_text, created_by, created_by_role, is_helper) 
+       VALUES ($1, $2, $3, $4, $5) 
+       RETURNING *`,
+      [help_request_id, comment_text, req.user.id, req.user.role, is_helper]
+    );
+
+    // If this is a helper comment, update only the helper_count
+    if (is_helper) {
+      await pool.query(
+        `UPDATE community_help_requests 
+         SET helper_count = helper_count + 1
+         WHERE id = $1`,
+        [help_request_id]
+      );
+    }
+
+    // Commit the transaction
+    await pool.query("COMMIT");
+
+    // Get the commenter's name
+    const user = await pool.query("SELECT name FROM users WHERE id = $1", [
+      req.user.id,
+    ]);
+
+    const commentWithUser = {
+      ...newComment.rows[0],
+      commenter_name: user.rows[0].name,
+    };
+
+    res.status(201).json({
+      message: "Comment added successfully",
+      comment: commentWithUser,
+    });
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    console.error("Error adding comment:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Update help request status
+const updateStatus = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    // Check if the user is the creator of the help request
+    const helpRequest = await pool.query(
+      "SELECT created_by FROM community_help_requests WHERE id = $1",
+      [id]
+    );
+
+    if (helpRequest.rows.length === 0) {
+      return res.status(404).json({ message: "Help request not found" });
+    }
+
+    if (helpRequest.rows[0].created_by !== req.user.id) {
+      return res.status(403).json({
+        message: "Only the creator can update the status of the help request",
+      });
+    }
+
+    const updatedRequest = await pool.query(
+      "UPDATE community_help_requests SET status = $1 WHERE id = $2 RETURNING *",
+      [status, id]
+    );
+
+    res.json({
+      message: "Status updated successfully",
+      help_request: updatedRequest.rows[0],
+    });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = {
   createHelpRequest,
   getHelpRequests,
   addComment,
   updateStatus,
-} = require("../controllers/communityHelpController");
-
-const router = express.Router();
-
-// Create a new help request (authenticated users only)
-router.post(
-  "/community-help",
-  [
-    authMiddleware,
-    body("title")
-      .trim()
-      .notEmpty()
-      .withMessage("Title is required")
-      .isLength({ max: 255 })
-      .withMessage("Title must be less than 255 characters"),
-    body("description")
-      .trim()
-      .notEmpty()
-      .withMessage("Description is required"),
-    body("location")
-      .trim()
-      .notEmpty()
-      .withMessage("Location is required")
-      .isLength({ max: 255 })
-      .withMessage("Location must be less than 255 characters"),
-    body("category")
-      .trim()
-      .notEmpty()
-      .withMessage("Category is required")
-      .isLength({ max: 100 })
-      .withMessage("Category must be less than 100 characters"),
-    body("urgency_level")
-      .trim()
-      .notEmpty()
-      .withMessage("Urgency level is required")
-      .isIn(["low", "medium", "urgent"])
-      .withMessage("Invalid urgency level"),
-  ],
-  createHelpRequest
-);
-
-// Get all help requests with filters and pagination
-router.get(
-  "/community-help",
-  [
-    query("category").optional().trim().isLength({ max: 100 }),
-    query("location").optional().trim(),
-    query("urgency_level")
-      .optional()
-      .isIn(["low", "medium", "urgent"])
-      .withMessage("Invalid urgency level"),
-    query("status")
-      .optional()
-      .isIn(["open", "in_progress", "completed", "closed"])
-      .withMessage("Invalid status"),
-    query("page")
-      .optional()
-      .isInt({ min: 1 })
-      .withMessage("Page must be a positive integer"),
-    query("limit")
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage("Limit must be between 1 and 100"),
-    query("all")
-      .optional()
-      .isBoolean()
-      .withMessage("All parameter must be true or false"),
-  ],
-  getHelpRequests
-);
-
-// Add a comment to a help request (authenticated users only)
-router.post(
-  "/community-help/:help_request_id/comments",
-  [
-    authMiddleware,
-    body("comment_text")
-      .trim()
-      .notEmpty()
-      .withMessage("Comment text is required"),
-    body("is_helper")
-      .optional()
-      .isBoolean()
-      .withMessage("is_helper must be true or false"),
-  ],
-  addComment
-);
-
-// Update help request status (only creator can update)
-router.patch(
-  "/community-help/:id/status",
-  [
-    authMiddleware,
-    body("status")
-      .trim()
-      .notEmpty()
-      .withMessage("Status is required")
-      .isIn(["open", "in_progress", "completed", "closed"])
-      .withMessage("Invalid status"),
-  ],
-  updateStatus
-);
-
-module.exports = router;
+};
