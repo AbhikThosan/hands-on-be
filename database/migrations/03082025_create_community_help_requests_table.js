@@ -1,4 +1,4 @@
-const pool = require("../db");
+const pool = require("../../src/db");
 
 const createCommunityHelpRequestsTable = async () => {
   const query = `
