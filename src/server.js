@@ -7,7 +7,7 @@ const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const communityHelpRoutes = require("./routes/communityHelpRoutes");
 const teamRoutes = require("./routes/teamRoutes");
-const pool = require("./db");
+// const pool = require("./db");
 
 const app = express();
 
