@@ -6,6 +6,7 @@ const {
   getHelpRequests,
   addComment,
   updateStatus,
+  getHelpRequestById,
 } = require("../controllers/communityHelpController");
 
 const router = express.Router();
@@ -76,6 +77,9 @@ router.get(
   ],
   getHelpRequests
 );
+
+// Get a single help request by ID
+router.get("/community-help/:help_request_id", getHelpRequestById);
 
 // Add a comment to a help request (authenticated users only)
 router.post(
