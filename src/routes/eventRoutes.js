@@ -6,11 +6,11 @@ const {
   createEvent,
   getEvents,
   joinEvent,
+  getSingleEvent,
 } = require("../controllers/eventController");
 
 const router = express.Router();
 
-// Event Creation Route (Only authenticated users with specific roles can create events)
 router.post(
   "/events",
   [
@@ -59,11 +59,9 @@ router.post(
   createEvent
 );
 
-// Get Events with Filters Route (Public route)
 router.get(
   "/events",
   [
-    // Optional query parameter validation
     query("category").optional().trim().isLength({ max: 100 }),
     query("location").optional().trim(),
     query("date").optional().isISO8601().withMessage("Invalid date format"),
@@ -82,6 +80,8 @@ router.get(
   ],
   getEvents
 );
+
+router.get("/events/:event_id", getSingleEvent);
 
 // Join Event Route (Only authenticated users can join events)
 router.post(
