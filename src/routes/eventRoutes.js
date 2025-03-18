@@ -6,6 +6,7 @@ const {
   createEvent,
   getEvents,
   joinEvent,
+  getSingleEvent,
 } = require("../controllers/eventController");
 
 const router = express.Router();
@@ -79,7 +80,7 @@ router.get(
   ],
   getEvents
 );
-
+router.get("/events/:event_id", getSingleEvent);
 // Join Event Route (Only authenticated users can join events)
 router.post(
   "/events/:eventId/join",
