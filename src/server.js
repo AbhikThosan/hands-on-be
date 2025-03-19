@@ -3,11 +3,11 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const authRoutes = require("./routes/authRoutes");
-const eventRoutes = require("./routes/eventRoutes");
-const communityHelpRoutes = require("./routes/communityHelpRoutes");
-const teamRoutes = require("./routes/teamRoutes");
-// const pool = require("./db");
+const pool = require("./config/db");
+const authRoutes = require("./features/auth/routes/authRoutes");
+const eventRoutes = require("./features/events/routes/eventRoutes");
+const communityHelpRoutes = require("./features/community-help/routes/communityHelpRoutes");
+const teamRoutes = require("./features/teams/routes/teamRoutes");
 
 const app = express();
 
@@ -21,9 +21,9 @@ if (process.env.NODE_ENV !== "production") {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api", eventRoutes);
-app.use("/api", communityHelpRoutes);
-app.use("/api", teamRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/community-help", communityHelpRoutes);
+app.use("/api/teams", teamRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running..." });
@@ -36,6 +36,14 @@ app.get("/test-db", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res
+    .status(500)
+    .json({ message: "Something went wrong!", error: err.message });
 });
 
 const PORT = process.env.PORT || 5000;

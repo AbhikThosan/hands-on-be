@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, query } = require("express-validator");
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware = require("../../../middleware/authMiddleware");
 const {
   createTeam,
   getTeams,
@@ -16,9 +16,8 @@ const {
 
 const router = express.Router();
 
-// Create a new team (authenticated users only)
 router.post(
-  "/teams",
+  "/",
   [
     authMiddleware,
     body("name")
@@ -40,9 +39,8 @@ router.post(
   createTeam
 );
 
-// Get all teams with filters and pagination
 router.get(
-  "/teams",
+  "/",
   [
     query("page")
       .optional()
@@ -61,18 +59,14 @@ router.get(
   getTeams
 );
 
-// Join a team (authenticated users only)
-router.post("/teams/:team_id/join", [authMiddleware], joinTeam);
+router.post("/:team_id/join", [authMiddleware], joinTeam);
 
-// Get team leaderboard
-router.get("/teams/leaderboard", getLeaderboard);
+router.get("/leaderboard", getLeaderboard);
 
-// Get team dashboard (authenticated users only)
-router.get("/teams/:team_id/dashboard", [authMiddleware], getTeamDashboard);
+router.get("/:team_id/dashboard", [authMiddleware], getTeamDashboard);
 
-// Send team invitation (authenticated users only)
 router.post(
-  "/teams/:team_id/invite",
+  "/:team_id/invite",
   [
     authMiddleware,
     body("user_email")
@@ -83,9 +77,8 @@ router.post(
   sendTeamInvitation
 );
 
-// Respond to team invitation (authenticated users only)
 router.post(
-  "/teams/invitations/:invitation_id/respond",
+  "/invitations/:invitation_id/respond",
   [
     authMiddleware,
     body("accept").isBoolean().withMessage("accept must be true or false"),
@@ -93,13 +86,10 @@ router.post(
   respondToInvitation
 );
 
-// Get user's team memberships (authenticated users only)
 router.get("/user/teams", [authMiddleware], getUserTeams);
 
-// Get user's pending invitations (authenticated users only)
-router.get("/teams/invitations", [authMiddleware], getPendingInvitations);
+router.get("/invitations", [authMiddleware], getPendingInvitations);
 
-// Get teams created by the authenticated user
-router.get("/teams/created", [authMiddleware], getMyCreatedTeams);
+router.get("/created", [authMiddleware], getMyCreatedTeams);
 
 module.exports = router;
