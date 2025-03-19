@@ -9,7 +9,6 @@ const {
   getTeamDashboard,
   sendTeamInvitation,
   respondToInvitation,
-  getUserTeams,
   getPendingInvitations,
   getMyCreatedTeams,
 } = require("../controllers/teamController");
@@ -85,8 +84,6 @@ router.post(
   ],
   respondToInvitation
 );
-
-router.get("/user/teams", [authMiddleware], getUserTeams);
 
 router.get("/invitations", [authMiddleware], getPendingInvitations);
 

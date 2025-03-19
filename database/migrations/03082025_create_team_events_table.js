@@ -1,4 +1,4 @@
-const pool = require("../../src/db");
+const pool = require("../../src/config/db");
 
 const createTeamEventsTable = async () => {
   const query = `

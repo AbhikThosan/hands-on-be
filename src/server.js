@@ -8,6 +8,8 @@ const authRoutes = require("./features/auth/routes/authRoutes");
 const eventRoutes = require("./features/events/routes/eventRoutes");
 const communityHelpRoutes = require("./features/community-help/routes/communityHelpRoutes");
 const teamRoutes = require("./features/teams/routes/teamRoutes");
+const { getUserTeams } = require("./features/teams/controllers/teamController");
+const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/community-help", communityHelpRoutes);
 app.use("/api/teams", teamRoutes);
+
+app.get("/api/user/teams", [authMiddleware], getUserTeams);
 
 app.get("/", (req, res) => {
   res.json({ message: "API is running..." });
