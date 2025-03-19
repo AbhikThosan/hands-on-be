@@ -2,6 +2,7 @@ const express = require("express");
 const { body } = require("express-validator");
 const authMiddleware = require("../../../middleware/authMiddleware");
 const roleMiddleware = require("../../../middleware/roleMiddleware");
+
 const {
   register,
   login,
@@ -9,8 +10,7 @@ const {
   getProfile,
   updateProfile,
   updateUserRole,
-} = require("../controllers/authController");
-
+} = require("../controllers/authContorller");
 const router = express.Router();
 
 router.post(
