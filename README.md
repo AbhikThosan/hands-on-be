@@ -242,7 +242,7 @@ Below is the database structure:
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/AbhikThosan/hands-on-be.git
-   cd handson
+   cd hands-on-be
    ```
 2. **Install Dependencies**:
    ```bash
