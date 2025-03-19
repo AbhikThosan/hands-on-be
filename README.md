@@ -265,15 +265,15 @@ Below is the database structure:
    Ensure your PostgreSQL database is running and accessible via the DATABASE_URL.
    Run the table creation scripts in the database/ folder in the following order (due to dependencies):
    ```bash
-   node database/03062025_create_users_table.js
-   node database/03072025_create_events_table.js
-   node database/03082025_create_community_help_requests_table.js
-   node database/03082025_create_community_help_comments_table.js
-   node database/03082025_create_teams_table.js
-   node database/03082025_create_team_members_table.js
-   node database/03082025_create_team_invitations_table.js
-   node database/03082025_create_team_events_table.js
-   node database/03082025_create_team_achievements_table.js
+   node database/migrations/03062025_create_users_table.js
+   node database/migrations/03072025_create_events_table.js
+   node database/migrations/03082025_create_community_help_requests_table.js
+   node database/migrations/03082025_create_community_help_comments_table.js
+   node database/migrations/03082025_create_teams_table.js
+   node database/migrations/03082025_create_team_members_table.js
+   node database/migrations/03082025_create_team_invitations_table.js
+   node database/migrations/03082025_create_team_events_table.js
+   node database/migrations/03082025_create_team_achievements_table.js
    ```
    Note: Update the require path in each file from ../../src/db to ../src/config/db to match your project structure before running.
 
