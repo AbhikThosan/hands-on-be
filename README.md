@@ -1,5 +1,7 @@
 # [HandsOn](https://hands-on-fe.vercel.app/) - Community-Driven Social Volunteering Platform (Backend)
 
+## [Live Link](https://hands-on-fe.vercel.app/)
+
 ## 📌 1. Project Overview
 
 HandsOn is a backend service for a community-driven social volunteering platform that connects individuals with meaningful social impact opportunities. It provides APIs for users to register, manage profiles, create and join volunteer events, post community help requests, form teams for collaborative initiatives, and track contributions. Designed as a "GitHub for social work" backend, HandsOn supports social responsibility and collaboration by rewarding participants with points and enabling recognition features.
