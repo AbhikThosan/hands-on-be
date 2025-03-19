@@ -45,7 +45,54 @@ HandsOn is a backend service for a community-driven social volunteering platform
   - Support for certificate generation at milestones (20, 50, 100 hours).
   - Provide leaderboard data for active volunteers and teams.
 
-## 📌 4. Database Schema
+## 📌 4. Project Structure
+
+```
+project-root/
+├── src/
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── controllers/
+│   │   │   │   ├── handlers/
+│   │   │   │   └── authController.js
+│   │   │   └── routes/
+│   │   │       └── authRoutes.js
+│   │   ├── events/
+│   │   │   ├── controllers/
+│   │   │   │   ├── handlers/
+│   │   │   │   └── eventController.js
+│   │   │   └── routes/
+│   │   │       └── eventRoutes.js
+│   │   ├── community-help/
+│   │   │   ├── controllers/
+│   │   │   │   ├── handlers/
+│   │   │   │   └── communityHelpController.js
+│   │   │   └── routes/
+│   │   │       └── communityHelpRoutes.js
+│   │   └── teams/
+│   │       ├── controllers/
+│   │       │   ├── handlers/
+│   │       │   └── teamController.js
+│   │       └── routes/
+│   │           └── teamRoutes.js
+│   ├── middleware/
+│   │   ├── authMiddleware.js
+│   │   └── roleMiddleware.js
+│   ├── config/
+│   │   └── db.js
+│   └── server.js
+├── database/
+│   ├── tables.sql
+│   └── seed.sql
+├── .env
+├── .gitignore
+├── package-lock.json
+├── package.json
+├── README.md
+└── vercel.json
+```
+
+## 📌 5. Database Schema
 
 Below is the database structure:
 
@@ -182,7 +229,7 @@ Below is the database structure:
 - Custom ENUM types: `team_member_role` ('admin', 'moderator', 'member') and `invitation_status` ('pending', 'accepted', 'declined').
 - Triggers exist for `updated_at` columns in `community_help_requests`, `community_help_comments`, `teams`, and `team_invitations` using a shared `update_updated_at_column()` function.
 
-## 📌 5. Setup Instructions
+## 📌 6. Setup Instructions
 
 ### Prerequisites
 
@@ -230,7 +277,7 @@ Below is the database structure:
    ```
    Note: Update the require path in each file from ../../src/db to ../src/config/db to match your project structure before running.
 
-## 📌 6. API Documentation
+## 📌 7. API Documentation
 
 All endpoints require `Content-Type: application/json`. Authentication-protected endpoints need `Authorization: Bearer <token>` in the headers.
 
@@ -729,7 +776,7 @@ All endpoints require `Content-Type: application/json`. Authentication-protected
   }
   ```
 
-## 📌 7. Running the Project
+## 📌 8. Running the Project
 
 ### Locally
 
