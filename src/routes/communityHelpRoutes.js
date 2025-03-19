@@ -4,9 +4,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 const {
   createHelpRequest,
   getHelpRequests,
+  getHelpRequestById,
   addComment,
   updateStatus,
-  getHelpRequestById,
+  getCommentsByHelpRequestId,
 } = require("../controllers/communityHelpController");
 
 const router = express.Router();
@@ -80,6 +81,12 @@ router.get(
 
 // Get a single help request by ID
 router.get("/community-help/:help_request_id", getHelpRequestById);
+
+// Get all comments for a specific help request (public access)
+router.get(
+  "/community-help/:help_request_id/comments",
+  getCommentsByHelpRequestId
+);
 
 // Add a comment to a help request (authenticated users only)
 router.post(
