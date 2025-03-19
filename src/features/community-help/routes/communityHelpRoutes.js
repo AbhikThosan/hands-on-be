@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, query } = require("express-validator");
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware = require("../../../middleware/authMiddleware");
 const {
   createHelpRequest,
   getHelpRequests,
@@ -12,9 +12,8 @@ const {
 
 const router = express.Router();
 
-// Create a new help request (authenticated users only)
 router.post(
-  "/community-help",
+  "/",
   [
     authMiddleware,
     body("title")
@@ -49,9 +48,8 @@ router.post(
   createHelpRequest
 );
 
-// Get all help requests with filters and pagination
 router.get(
-  "/community-help",
+  "/",
   [
     query("category").optional().trim().isLength({ max: 100 }),
     query("location").optional().trim(),
@@ -79,18 +77,12 @@ router.get(
   getHelpRequests
 );
 
-// Get a single help request by ID
-router.get("/community-help/:help_request_id", getHelpRequestById);
+router.get("/:help_request_id", getHelpRequestById);
 
-// Get all comments for a specific help request (public access)
-router.get(
-  "/community-help/:help_request_id/comments",
-  getCommentsByHelpRequestId
-);
+router.get("/:help_request_id/comments", getCommentsByHelpRequestId);
 
-// Add a comment to a help request (authenticated users only)
 router.post(
-  "/community-help/:help_request_id/comments",
+  "/:help_request_id/comments",
   [
     authMiddleware,
     body("comment_text")
@@ -105,9 +97,8 @@ router.post(
   addComment
 );
 
-// Update help request status (only creator can update)
 router.patch(
-  "/community-help/:id/status",
+  "/:id/status",
   [
     authMiddleware,
     body("status")

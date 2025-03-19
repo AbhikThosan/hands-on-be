@@ -1,22 +1,21 @@
 const express = require("express");
 const { body, query } = require("express-validator");
-const authMiddleware = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+const authMiddleware = require("../../../middleware/authMiddleware");
+const roleMiddleware = require("../../../middleware/roleMiddleware");
 const {
   createEvent,
   getEvents,
-  joinEvent,
   getSingleEvent,
+  joinEvent,
 } = require("../controllers/eventController");
 
 const router = express.Router();
 
 router.post(
-  "/events",
+  "/",
   [
     authMiddleware,
     roleMiddleware(["admin", "organization", "volunteer"]),
-    // Validation middleware
     body("title")
       .trim()
       .notEmpty()
@@ -60,7 +59,7 @@ router.post(
 );
 
 router.get(
-  "/events",
+  "/",
   [
     query("category").optional().trim().isLength({ max: 100 }),
     query("location").optional().trim(),
@@ -80,14 +79,12 @@ router.get(
   ],
   getEvents
 );
-router.get("/events/:event_id", getSingleEvent);
-// Join Event Route (Only authenticated users can join events)
+
+router.get("/:event_id", getSingleEvent);
+
 router.post(
-  "/events/:eventId/join",
-  [
-    authMiddleware,
-    roleMiddleware(["volunteer"]), // Only volunteers can join events
-  ],
+  "/:eventId/join",
+  [authMiddleware, roleMiddleware(["volunteer"])],
   joinEvent
 );
 
